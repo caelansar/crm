@@ -2,7 +2,7 @@
 
 mod abi;
 mod config;
-mod pb;
+pub mod pb;
 
 use std::{ops::Deref, sync::Arc};
 
@@ -37,24 +37,24 @@ impl UserStats for UserStatsService {
 
     async fn query(
         &self,
-        _request: tonic::Request<pb::QueryRequest>,
+        request: tonic::Request<pb::QueryRequest>,
     ) -> ServiceResult<Self::QueryStream> {
-        self.inner.raw_query("".to_string()).await
+        self.query(request.into_inner()).await
     }
 
     async fn raw_query(
         &self,
         request: tonic::Request<pb::RawQueryRequest>,
     ) -> ServiceResult<Self::RawQueryStream> {
-        self.inner
-            .raw_query(request.into_inner().query.clone())
-            .await
+        self.raw_query(request.into_inner().query.clone()).await
     }
 }
 
 impl UserStatsService {
     pub async fn new(config: AppConfig) -> Self {
-        let client = Client::default().with_url(&config.server.db_url);
+        let client = Client::default()
+            .with_url(&config.server.db_url)
+            .with_database(&config.server.db_name);
         let inner = UserStatsServiceInner { client, config };
         Self {
             inner: Arc::new(inner),

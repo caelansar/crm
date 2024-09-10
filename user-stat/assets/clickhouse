@@ -1,0 +1,29 @@
+CREATE TABLE crm.user_stat(
+  email String,
+  name String,
+  gender Enum('female' = 1, 'male' = 2, 'unknown' = 3) DEFAULT 'unknown',
+  created_at DateTime DEFAULT now(),
+  last_visited_at Nullable(DateTime),
+  last_watched_at Nullable(DateTime),
+  recent_watched Array(Int32),
+  viewed_but_not_started Array(Int32),
+  started_but_not_finished Array(Int32),
+  finished Array(Int32),
+  last_email_notification Nullable(DateTime),
+  last_in_app_notification Nullable(DateTime),
+  last_sms_notification Nullable(DateTime)
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(created_at)
+ORDER BY (email, created_at);
+
+-- Generate mock records for the user_stat table
+INSERT INTO crm.user_stat (email, name, gender, created_at, last_visited_at, last_watched_at, recent_watched, viewed_but_not_started, started_but_not_finished, finished, last_email_notification, last_in_app_notification, last_sms_notification)
+VALUES
+    ('john.doe@example.com', 'John Doe', 'male', '2023-01-01 10:00:00', '2023-06-15 14:30:00', '2023-06-14 20:15:00', [101, 102, 103], [201, 202], [301, 302], [401, 402, 403, 404], '2023-06-10 09:00:00', '2023-06-13 16:45:00', '2023-06-11 12:30:00'),
+    ('jane.smith@example.com', 'Jane Smith', 'female', '2023-02-15 09:30:00', '2023-06-14 11:45:00', '2023-06-13 19:20:00', [104, 105], [203, 204, 205], [303], [404], '2023-06-12 10:15:00', '2023-06-14 13:30:00', NULL),
+    ('alex.johnson@example.com', 'Alex Johnson', 'unknown', '2023-03-10 14:15:00', '2023-06-13 16:00:00', '2023-06-12 21:30:00', [106, 107, 108, 109], [206], [304, 305, 306], [405, 406], '2023-06-11 11:00:00', '2023-06-13 09:45:00', '2023-06-10 17:30:00'),
+    ('emma.wilson@example.com', 'Emma Wilson', 'female', '2023-04-05 11:45:00', '2023-06-15 10:30:00', '2023-06-14 22:00:00', [110], [207, 208, 209], [307], [407, 408, 409], '2023-06-13 14:30:00', '2023-06-15 08:15:00', '2023-06-12 19:00:00'),
+    ('michael.brown@example.com', 'Michael Brown', 'male', '2023-05-20 16:30:00', '2023-06-14 09:15:00', '2023-06-13 18:45:00', [111, 112], [210], [308, 309], [410], '2023-06-12 16:00:00', '2023-06-14 11:30:00', NULL);
+
+-- You can verify the inserted data with this query:
+-- SELECT * FROM crm.user_stat;

@@ -17,6 +17,7 @@ pub struct AuthConfig {
 pub struct ServerConfig {
     pub port: u16,
     pub db_url: String,
+    pub db_name: String,
 }
 
 impl AppConfig {

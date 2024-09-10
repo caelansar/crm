@@ -1,14 +1,14 @@
-use std::fmt::Display;
-
 use async_stream::stream;
-use clickhouse::{sql::Identifier, Row};
+use chrono::{DateTime, TimeZone, Utc};
+use clickhouse::{query::Query, sql::Identifier, Client, Row};
 use futures::Stream;
+use prost_types::Timestamp;
 use serde::Deserialize;
 use tonic::{Code, Response, Status};
 
 use crate::{
     pb::{QueryRequest, User},
-    ServiceResult, UserStatsServiceInner,
+    ServiceResult, UserStatsService,
 };
 
 #[derive(Row, Deserialize)]
@@ -26,25 +26,32 @@ impl From<UserRow> for User {
     }
 }
 
-impl UserStatsServiceInner {
+impl UserStatsService {
     pub async fn query(
         &self,
         request: QueryRequest,
     ) -> ServiceResult<impl Stream<Item = Result<User, Status>> + Send + 'static> {
-        self.raw_query(request.to_string()).await
+        let mut cursor = request
+            .to_query(&self.client)
+            .fetch::<UserRow>()
+            .map_err(|e| Status::new(Code::Unknown, e.to_string()))?;
+
+        Ok(Response::new(stream! {
+            while let Some(row) = cursor.next().await.map_err(|e| Status::new(Code::Unknown, e.to_string()))? {
+                yield Ok(row.into());
+            }
+        }))
     }
 
     pub async fn raw_query(
         &self,
         _query: String,
     ) -> ServiceResult<impl Stream<Item = Result<User, Status>> + Send + 'static> {
-        // TODO: do query
         let mut cursor = self
             .client
-            .query("SELECT ?fields FROM ? WHERE ts BETWEEN ? AND ?")
-            .bind(Identifier("users"))
-            .bind(500)
-            .bind(504)
+            .query("SELECT ?fields FROM ? LIMIT ?")
+            .bind(Identifier("user_stat"))
+            .bind(50)
             .fetch::<UserRow>()
             .map_err(|e| Status::new(Code::Unknown, e.to_string()))?;
 
@@ -56,9 +63,109 @@ impl UserStatsServiceInner {
     }
 }
 
-impl Display for QueryRequest {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TODO: generate sql
-        write!(f, "")
+impl QueryRequest {
+    pub fn to_query(&self, client: &Client) -> Query {
+        let mut sql = String::from("SELECT ?fields FROM ?");
+
+        let time_query = self
+            .timestamps
+            .clone()
+            .into_iter()
+            .map(|(k, v)| timestamp_query(&k, v.lower, v.upper))
+            .collect::<Vec<_>>();
+
+        let id_query = self
+            .ids
+            .clone()
+            .into_iter()
+            .map(|(k, v)| ids_query(&k, v.ids))
+            .collect::<Vec<_>>();
+
+        sql.push_str(" WHERE ");
+
+        let mut time_bind: Vec<i64> = vec![];
+        let mut id_bind: Vec<u32> = vec![];
+
+        sql.push_str(
+            &time_query
+                .into_iter()
+                .map(|(condition, bind)| {
+                    time_bind.extend(bind);
+                    condition
+                })
+                .collect::<Vec<_>>()
+                .join(" AND "),
+        );
+
+        sql.push_str(" AND ");
+
+        sql.push_str(
+            &id_query
+                .into_iter()
+                .map(|(condition, bind)| {
+                    id_bind.extend(bind);
+                    condition
+                })
+                .collect::<Vec<_>>()
+                .join(" AND "),
+        );
+
+        sql.push_str(" ORDER BY (email, created_at)");
+
+        println!("{}", sql);
+
+        let mut query = client.query(&sql).bind(Identifier("user_stat"));
+
+        query = time_bind.into_iter().fold(query, |query, bind| {
+            println!("bind: {}", bind);
+            query.bind(bind)
+        });
+
+        query = id_bind.into_iter().fold(query, |query, bind| {
+            println!("bind: {}", bind);
+            query.bind(bind)
+        });
+
+        query
     }
+}
+
+fn ids_query(name: &str, ids: Vec<u32>) -> (String, Vec<u32>) {
+    if ids.is_empty() {
+        return ("TRUE".to_string(), vec![]);
+    }
+
+    (format!("arrayExists(x -> x IN (?), {name})"), ids)
+}
+
+fn timestamp_query(
+    name: &str,
+    lower: Option<Timestamp>,
+    upper: Option<Timestamp>,
+) -> (String, Vec<i64>) {
+    if lower.is_none() && upper.is_none() {
+        return ("TRUE".to_string(), vec![]);
+    }
+
+    if lower.is_none() {
+        let upper = ts_to_utc(upper.unwrap());
+        return (format!("{} <= ?", name), vec![upper.timestamp()]);
+    }
+
+    if upper.is_none() {
+        let lower = ts_to_utc(lower.unwrap());
+        return (format!("{} >= ?", name), vec![lower.timestamp()]);
+    }
+
+    (
+        format!("{} BETWEEN ? AND ?", name),
+        vec![
+            ts_to_utc(lower.unwrap()).timestamp(),
+            ts_to_utc(upper.unwrap()).timestamp(),
+        ],
+    )
+}
+
+fn ts_to_utc(ts: Timestamp) -> DateTime<Utc> {
+    Utc.timestamp_opt(ts.seconds, ts.nanos as _).unwrap()
 }
