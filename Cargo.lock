@@ -292,6 +292,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "crm-notification"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "crm-notification",
+ "fake",
+ "futures",
+ "nanoid",
+ "prost",
+ "prost-types",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-build",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1757,6 +1780,15 @@ dependencies = [
  "tonic-build",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "uuid"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81dfa00651efa65069b0b6b651f4aaa31ba9e3c3ce0137aaad053604ee7e0314"
+dependencies = [
+ "getrandom",
 ]
 
 [[package]]

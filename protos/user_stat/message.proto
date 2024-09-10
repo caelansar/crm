@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package message;
+package user_stat;
 
 import "google/protobuf/timestamp.proto";
 
@@ -26,9 +26,4 @@ message TimeQuery {
 
 message IdQuery {
   repeated uint32 ids = 1;
-}
-
-service UserStats {
-    rpc Query(QueryRequest) returns (stream User) {}
-    rpc RawQuery(RawQueryRequest) returns (stream User) {}
 }

@@ -1,10 +1,12 @@
 [workspace]
-members = ["crm", "user-stat"]
+members = ["crm", "crm-notification", "user-stat"]
 resolver = "2"
 
 
 [workspace.dependencies]
 anyhow = "1.0.82"
+chrono = "0.4.38"
+crm-notification = { path = "crm-notification" }
 futures = "0.3.30"
 prost = "0.12.4"
 prost-build = "0.12.4"

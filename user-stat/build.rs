@@ -41,6 +41,15 @@ fn main() -> Result<()> {
             &["QueryRequest.ids"],
             &[r#"#[builder(setter(each(name="id", into)))]"#],
         )
-        .compile(&["../protos/message.proto"], &["../protos"])?;
+        .compile(
+            &[
+                "../protos/user_stat/message.proto",
+                "../protos/user_stat/rpc.proto",
+            ],
+            &[".."],
+        )?;
+
+    println!("cargo:rerun-if-changed=../protos/user_stat/message.proto");
+    println!("cargo:rerun-if-changed=../protos/user_stat/rpc.proto");
     Ok(())
 }

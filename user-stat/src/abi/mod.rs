@@ -37,7 +37,7 @@ impl UserStatsService {
             .map_err(|e| Status::new(Code::Unknown, e.to_string()))?;
 
         Ok(Response::new(stream! {
-            while let Some(row) = cursor.next().await.map_err(|e| Status::new(Code::Unknown, e.to_string()))? {
+            while let Some(row) = cursor.next().await.map_err(|e| Status::internal(e.to_string()))? {
                 yield Ok(row.into());
             }
         }))
@@ -56,7 +56,7 @@ impl UserStatsService {
             .map_err(|e| Status::new(Code::Unknown, e.to_string()))?;
 
         Ok(Response::new(stream! {
-            while let Some(row) = cursor.next().await.map_err(|e| Status::new(Code::Unknown, e.to_string()))? {
+            while let Some(row) = cursor.next().await.map_err(|e| Status::internal(e.to_string()))? {
                 yield Ok(row.into());
             }
         }))
