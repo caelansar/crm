@@ -1,3 +1,5 @@
+#![cfg(target_os = "macos")]
+
 use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Result;
