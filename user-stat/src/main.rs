@@ -14,6 +14,22 @@ async fn main() -> Result<()> {
     let addr = format!("127.0.0.1:{}", addr).parse().unwrap();
     info!("User-Stat service listening on {}", addr);
     let svc = UserStatsService::new(config).await.into_server();
-    Server::builder().add_service(svc).serve(addr).await?;
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    let server = Server::builder().add_service(svc);
+
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install ctrl+c handler");
+        tx.send(()).expect("Failed to send shutdown signal");
+    });
+
+    server
+        .serve_with_shutdown(addr, async {
+            rx.await.ok();
+            info!("Shutting down gracefully");
+        })
+        .await?;
+
     Ok(())
 }
