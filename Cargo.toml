@@ -1,5 +1,5 @@
 [workspace]
-members = ["crm", "crm-notification", "user-stat"]
+members = ["crm", "crm-notification", "load-balancer", "user-stat"]
 resolver = "2"
 
 
