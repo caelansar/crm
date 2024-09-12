@@ -10,7 +10,7 @@ test_utils = ["fake", "nanoid", "uuid"]
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
-fake = { version = "2.9.2", features = ["derive", "chrono"], optional = true }
+fake = { workspace = true, optional = true }
 futures = { workspace = true }
 nanoid = { version = "0.4.0", optional = true }
 prost = { workspace = true }
