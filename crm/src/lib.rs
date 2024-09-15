@@ -1,17 +1,72 @@
 mod abi;
+mod config;
+
 pub mod pb;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+pub use config::{AppConfig, ConfigExt};
+
+use anyhow::{Context, Result};
+use crm_metadata::pb::metadata_client::MetadataClient;
+use crm_notification::pb::notification_client::NotificationClient;
+use pb::{
+    crm_server::{Crm, CrmServer},
+    RecallRequest, RecallResponse, RemindRequest, RemindResponse, WelcomeRequest, WelcomeResponse,
+};
+use tonic::{async_trait, transport::Channel, Request, Response, Status};
+use user_stat::pb::user_stats_client::UserStatsClient;
+
+pub struct CrmService {
+    config: AppConfig,
+    user_stats: UserStatsClient<Channel>,
+    notification: NotificationClient<Channel>,
+    metadata: MetadataClient<Channel>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[async_trait]
+impl Crm for CrmService {
+    async fn welcome(
+        &self,
+        request: Request<WelcomeRequest>,
+    ) -> Result<Response<WelcomeResponse>, Status> {
+        self.welcome(request.into_inner()).await
+    }
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    async fn recall(
+        &self,
+        _request: Request<RecallRequest>,
+    ) -> Result<Response<RecallResponse>, Status> {
+        todo!()
+    }
+
+    async fn remind(
+        &self,
+        _request: Request<RemindRequest>,
+    ) -> Result<Response<RemindResponse>, Status> {
+        todo!()
+    }
+}
+
+impl CrmService {
+    pub async fn try_new(config: AppConfig) -> Result<Self> {
+        let user_stats = UserStatsClient::connect(config.server.user_stats.clone())
+            .await
+            .context("User stats client")?;
+        let notification = NotificationClient::connect(config.server.notification.clone())
+            .await
+            .context("Notification client")?;
+        let metadata = MetadataClient::connect(config.server.metadata.clone())
+            .await
+            .context("Metadata client")?;
+
+        Ok(Self {
+            config,
+            user_stats,
+            notification,
+            metadata,
+        })
+    }
+
+    pub fn into_server(self) -> Result<CrmServer<CrmService>> {
+        Ok(CrmServer::new(self))
     }
 }

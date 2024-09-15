@@ -1,59 +1,36 @@
-#![feature(impl_trait_in_assoc_type)]
-
-use std::vec;
+use std::mem;
 
 use anyhow::Result;
-use crm::pb::{
-    user_service_server::{UserService, UserServiceServer},
-    CreateUserRequest, GetUserRequest, User,
-};
-use tonic::{async_trait, transport::Server, Request, Response, Status};
-
-#[derive(Default)]
-pub struct UserServer {}
-
-#[async_trait]
-impl UserService for UserServer {
-    type ServerSideStreamingStream =
-        impl tokio_stream::Stream<Item = Result<User, Status>> + Send + 'static;
-
-    async fn get_user(&self, request: Request<GetUserRequest>) -> Result<Response<User>, Status> {
-        let input = request.into_inner();
-        println!("get_user: {:?}", input);
-        Ok(Response::new(User::default()))
-    }
-
-    async fn server_side_streaming(
-        &self,
-        _request: Request<GetUserRequest>,
-    ) -> Result<Response<Self::ServerSideStreamingStream>, Status> {
-        let user1 = User::new(1, "John Doe", "john.doe@example.com");
-        let user2 = User::new(2, "Cae", "cae@example.com");
-        let stream = tokio_stream::iter(vec![Ok(user1), Ok(user2)]);
-        Ok(Response::new(stream))
-    }
-
-    async fn create_user(
-        &self,
-        request: Request<CreateUserRequest>,
-    ) -> Result<Response<User>, Status> {
-        let input = request.into_inner();
-        println!("create_user: {:?}", input);
-        let user = User::new(1, &input.name, &input.email);
-        Ok(Response::new(user))
-    }
-}
+use crm::{AppConfig, ConfigExt, CrmService};
+use tonic::transport::{Identity, Server, ServerTlsConfig};
+use tracing::{info, level_filters::LevelFilter};
+use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let addr = "127.0.0.1:50051".parse().unwrap();
-    let svc = UserServer::default();
+    let layer = Layer::new().with_filter(LevelFilter::INFO);
+    tracing_subscriber::registry().with(layer).init();
 
-    println!("UserService listening on {}", addr);
+    let mut config = AppConfig::load().expect("Failed to load config");
 
-    Server::builder()
-        .add_service(UserServiceServer::new(svc))
-        .serve(addr)
-        .await?;
+    let tls = mem::take(&mut config.server.tls);
+
+    let addr = config.server.port;
+    let addr = format!("127.0.0.1:{}", addr).parse().unwrap();
+    info!("CRM service listening on {}", addr);
+    let svc = CrmService::try_new(config).await?.into_server()?;
+
+    // if tls is enabled, use tls
+    if let Some(tls) = tls {
+        let identity = Identity::from_pem(tls.cert, tls.key);
+        Server::builder()
+            .tls_config(ServerTlsConfig::new().identity(identity))?
+            .add_service(svc)
+            .serve(addr)
+            .await?;
+    } else {
+        info!("TLS is not enabled");
+        Server::builder().add_service(svc).serve(addr).await?;
+    }
     Ok(())
 }

@@ -7,7 +7,7 @@ use serde::Deserialize;
 use tonic::{Code, Response, Status};
 
 use crate::{
-    pb::{QueryRequest, User},
+    pb::{QueryRequest, QueryRequestBuilder, TimeQuery, User},
     ServiceResult, UserStatsService,
 };
 
@@ -64,6 +64,26 @@ impl UserStatsService {
 }
 
 impl QueryRequest {
+    pub fn new_with_dt(name: &str, lower: DateTime<Utc>, upper: DateTime<Utc>) -> Self {
+        let ts = Timestamp {
+            seconds: lower.timestamp(),
+            nanos: 0,
+        };
+        let ts1 = Timestamp {
+            seconds: upper.timestamp(),
+            nanos: 0,
+        };
+        let tq = TimeQuery {
+            lower: Some(ts),
+            upper: Some(ts1),
+        };
+
+        QueryRequestBuilder::default()
+            .timestamp((name.to_string(), tq))
+            .build()
+            .expect("Failed to build query request")
+    }
+
     pub fn to_query(&self, client: &Client) -> Query {
         let mut sql = String::from("SELECT ?fields FROM ?");
 

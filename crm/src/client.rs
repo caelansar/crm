@@ -1,28 +1,23 @@
 use anyhow::Result;
-use crm::pb::{user_service_client::UserServiceClient, CreateUserRequest, GetUserRequest};
-use tokio_stream::StreamExt as _;
-use tonic::Request;
+use crm::pb::{crm_client::CrmClient, WelcomeRequestBuilder};
+use tonic::{transport::Channel, Request};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut client = UserServiceClient::connect("http://127.0.0.1:50051").await?;
+    let channel = Channel::from_static("http://127.0.0.1:50000")
+        .connect()
+        .await?;
 
-    let request = Request::new(CreateUserRequest {
-        name: "Alice".to_string(),
-        email: "alice@acme.org".to_string(),
-    });
+    let mut client = CrmClient::new(channel);
 
-    let response = client.create_user(request).await?;
+    let req = WelcomeRequestBuilder::default()
+        .id(Uuid::new_v4().to_string())
+        .interval(90u32)
+        .content_ids([1, 2, 3])
+        .build()?;
 
-    println!("RESPONSE={:?}", response);
-
-    let request = Request::new(GetUserRequest { id: 1 });
-
-    let mut response = client.server_side_streaming(request).await?;
-
-    while let Some(Ok(user)) = response.get_mut().next().await {
-        println!("USER={:?}", user);
-    }
-
+    let response = client.welcome(Request::new(req)).await?.into_inner();
+    println!("Response: {:?}", response);
     Ok(())
 }

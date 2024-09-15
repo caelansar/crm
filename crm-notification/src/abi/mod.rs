@@ -10,9 +10,13 @@ use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Response, Status};
 use tracing::{info, warn};
+use uuid::Uuid;
 
 use crate::{
-    pb::{notification_server::NotificationServer, send_request::Msg, SendRequest, SendResponse},
+    pb::{
+        notification_server::NotificationServer, send_request::Msg, EmailMessage, SendRequest,
+        SendResponse,
+    },
     AppConfig, NotificationService, NotificationServiceInner, ServiceResult,
 };
 
@@ -69,6 +73,21 @@ impl NotificationService {
         let stream = ReceiverStream::new(rx);
 
         Ok(Response::new(stream))
+    }
+}
+
+impl SendRequest {
+    /// Create an email message
+    pub fn new_email(subject: String, sender: String, recipients: &[String]) -> Self {
+        let msg = Msg::Email(EmailMessage {
+            message_id: Uuid::new_v4().to_string(),
+            subject,
+            sender,
+            recipients: recipients.to_vec(),
+            body: "".to_string(),
+        });
+
+        SendRequest { msg: Some(msg) }
     }
 }
 

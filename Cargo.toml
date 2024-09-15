@@ -6,6 +6,8 @@ resolver = "2"
 [workspace.dependencies]
 anyhow = "1.0.82"
 chrono = "0.4.38"
+crm-metadata = { path = "crm-metadata" }
+user-stat = { path = "user-stat" }
 crm-notification = { path = "crm-notification" }
 derive_builder = "0.20.0"
 fake = { version = "2.9.2", features = ["derive", "chrono"] }
