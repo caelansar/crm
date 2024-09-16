@@ -1,5 +1,5 @@
 [workspace]
-members = ["crm", "crm-metadata", "crm-notification", "load-balancer", "user-stat"]
+members = ["crm", "crm-core", "crm-metadata", "crm-notification", "load-balancer", "user-stat"]
 resolver = "2"
 
 
@@ -7,21 +7,29 @@ resolver = "2"
 anyhow = "1.0.82"
 chrono = "0.4.38"
 crm-metadata = { path = "crm-metadata" }
+crm-core = { path = "crm-core" }
 user-stat = { path = "user-stat" }
 crm-notification = { path = "crm-notification" }
 derive_builder = "0.20.0"
 fake = { version = "2.9.2", features = ["derive", "chrono"] }
 futures = "0.3.30"
-prost = "0.12.4"
-prost-build = "0.12.4"
-prost-types = "0.12.4"
+opentelemetry = { version = "0.24" }
+opentelemetry-http = { version = "0.13" }
+opentelemetry_sdk = { version = "0.24" }
+opentelemetry-otlp = { version = "0.17" }
+prost = "0.13.2"
+prost-build = "0.13.2"
+prost-types = "0.13.2"
 proto-builder-trait = "0.6.1"
 rand = "0.8.5"
 serde = { version = "1.0.200", features = ["derive"] }
 serde_yaml = "0.9.22"
 tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
 tokio-stream = "0.1"
-tonic = { version = "0.11.0", features = ["zstd", "tls"] }
-tonic-build = "0.11.0"
+tonic = { version = "0.12.2", features = ["zstd", "tls"] }
+tonic-build = "0.12.2"
+tower = "0.5.1"
+tower-http = { version = "0.5" }
 tracing = "0.1.40"
+tracing-opentelemetry = { version = "0.25" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

@@ -1,35 +1,41 @@
 use anyhow::Result;
+use crm_core::{accept_trace, log_error, telemetry, ConfigExt};
 use tonic::transport::Server;
-use tracing::{info, level_filters::LevelFilter};
-use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+use tracing::{field, info, info_span, Span};
 use user_stat::{AppConfig, UserStatsService};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let layer = Layer::new().with_filter(LevelFilter::INFO);
-    tracing_subscriber::registry().with(layer).init();
-
     let config = AppConfig::load().expect("Failed to load config");
+
+    telemetry::init(config.telemetry.clone()).inspect_err(log_error)?;
+
     let addr = config.server.port;
     let addr = format!("127.0.0.1:{}", addr).parse().unwrap();
     info!("User-Stat service listening on {}", addr);
     let svc = UserStatsService::new(config).await.into_server();
-    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-    let server = Server::builder().add_service(svc);
+    let server = Server::builder()
+        .layer(
+            ServiceBuilder::new()
+                .layer(tower::timeout::TimeoutLayer::new(
+                    std::time::Duration::from_secs(30),
+                ))
+                .layer(
+                    TraceLayer::new_for_grpc()
+                        .make_span_with(make_span)
+                        .on_request(accept_trace),
+                ),
+        )
+        .add_service(svc);
 
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Failed to install ctrl+c handler");
-        tx.send(()).expect("Failed to send shutdown signal");
-    });
-
-    server
-        .serve_with_shutdown(addr, async {
-            rx.await.ok();
-            info!("Shutting down gracefully");
-        })
-        .await?;
+    server.serve(addr).await?;
 
     Ok(())
+}
+
+fn make_span<B>(request: &http::Request<B>) -> Span {
+    let headers = request.headers();
+    info_span!("incoming request", ?headers, trace_id = field::Empty)
 }

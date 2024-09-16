@@ -1,11 +1,11 @@
-use anyhow::{bail, Result};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{env, fs::File};
+use crm_core::telemetry;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppConfig {
     pub server: ServerConfig,
     pub auth: AuthConfig,
+    pub telemetry: telemetry::Config,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,22 +28,3 @@ pub struct TlsConfig {
     pub cert: String,
     pub key: String,
 }
-
-pub trait ConfigExt {
-    fn load() -> Result<Self>
-    where
-        Self: Sized + DeserializeOwned,
-    {
-        let ret = match (
-            File::open("app.yml"),
-            File::open("/etc/config/crm.yml"),
-            env::var("CRM_CONFIG"),
-        ) {
-            (Ok(reader), _, _) => serde_yaml::from_reader(reader),
-            _ => bail!("Config file not found"),
-        };
-        Ok(ret?)
-    }
-}
-
-impl<T> ConfigExt for T where T: DeserializeOwned {}

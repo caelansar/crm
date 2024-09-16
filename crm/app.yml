@@ -1,9 +1,14 @@
 server:
   port: 50000
   sender_email: cae@cae.com
-  user_stats: http://localhost:50001
-  metadata: http://localhost:50002
-  notification: http://localhost:50003
+  user_stats: http://127.0.0.1:50001
+  metadata: http://127.0.0.1:50002
+  notification: http://127.0.0.1:50003
+
+telemetry:
+  tracing:
+    enabled: true
+    service_name: crm
 
 auth:
   pk: |

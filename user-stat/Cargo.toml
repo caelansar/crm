@@ -6,12 +6,16 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+crm-core = { workspace = true }
 derive_builder = { workspace = true }
 futures = { workspace = true }
+http = "1.1.0"
 prost = { workspace = true }
 prost-types = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
+tower = { workspace = true, features = ["timeout", "util"] }
+tower-http = { workspace = true, features = ["trace"] }
 tonic = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tokio-stream = { workspace = true }

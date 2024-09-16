@@ -1,5 +1,4 @@
 use anyhow::Result;
-use proto_builder_trait::tonic::BuilderAttributes;
 use std::fs;
 
 fn main() -> Result<()> {
@@ -9,37 +8,52 @@ fn main() -> Result<()> {
     let builder = tonic_build::configure();
     builder
         .out_dir("src/pb")
-        .with_serde(
-            &["User"],
-            true,
-            true,
-            Some(&[r#"#[serde(rename_all = "camelCase")]"#]),
+        .type_attribute(
+            "user_stat.User",
+            "#[derive(serde::Serialize, serde::Deserialize)]",
         )
-        .with_derive_builder(
-            &[
-                "User",
-                "QueryRequest",
-                "RawQueryRequest",
-                "TimeQuery",
-                "IdQuery",
-            ],
-            None,
+        .type_attribute("user_stat.User", r#"#[serde(rename_all = "camelCase")]"#)
+        .type_attribute("user_stat.User", "#[derive(derive_builder::Builder)]")
+        .type_attribute(
+            "user_stat.QueryRequest",
+            "#[derive(derive_builder::Builder)]",
         )
-        .with_field_attributes(
-            &["User.email", "User.name", "RawQueryRequest.query"],
-            &[r#"#[builder(setter(into))]"#],
+        .type_attribute(
+            "user_stat.QueryRequest",
+            "#[builder(setter(into, strip_option), default)]
+        ",
         )
-        .with_field_attributes(
-            &["TimeQuery.before", "TimeQuery.after"],
-            &[r#"#[builder(setter(into, strip_option))]"#],
+        .type_attribute(
+            "user_stat.RawQueryRequest",
+            "#[derive(derive_builder::Builder)]",
         )
-        .with_field_attributes(
-            &["QueryRequest.timestamps"],
-            &[r#"#[builder(setter(each(name="timestamp", into)))]"#],
+        .type_attribute("user_stat.TimeQuery", "#[derive(derive_builder::Builder)]")
+        .type_attribute("user_stat.IdQuery", "#[derive(derive_builder::Builder)]")
+        .field_attribute("user_stat.User.email", r#"#[builder(setter(into))]"#)
+        .field_attribute("user_stat.User.name", r#"#[builder(setter(into))]"#)
+        .field_attribute(
+            "user_stat.RawQueryRequest.query",
+            r#"#[builder(setter(into))]"#,
         )
-        .with_field_attributes(
-            &["QueryRequest.ids"],
-            &[r#"#[builder(setter(each(name="id", into)))]"#],
+        .field_attribute(
+            "user_stat.TimeQuery.before",
+            r#"#[builder(setter(into, strip_option))]"#,
+        )
+        .field_attribute(
+            "user_stat.TimeQuery.after",
+            r#"#[builder(setter(into, strip_option))]"#,
+        )
+        .field_attribute(
+            "user_stat.QueryRequest.timestamps",
+            r#"#[builder(setter(each(name="timestamp", into)))]"#,
+        )
+        .field_attribute(
+            "user_stat.QueryRequest.ids",
+            r#"#[builder(setter(each(name="id", into)))]"#,
+        )
+        .field_attribute(
+            "user_stat.IdQuery.ids",
+            r#"#[builder(setter(each(name="id", into)))]"#,
         )
         .compile(
             &[

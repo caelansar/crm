@@ -1,0 +1,21 @@
+[package]
+name = "crm-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = {workspace = true}
+chrono = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+opentelemetry-otlp = { workspace = true, features = ["trace", "grpc-tonic"] }
+thiserror = "1.0.63"
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+serde_json = "1.0.128"
+tonic = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["json"] }
+tracing-opentelemetry = { workspace = true }
+http = "1.1.0"

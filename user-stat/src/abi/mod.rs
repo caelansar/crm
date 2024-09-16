@@ -5,6 +5,7 @@ use futures::Stream;
 use prost_types::Timestamp;
 use serde::Deserialize;
 use tonic::{Code, Response, Status};
+use tracing::{debug, error, instrument};
 
 use crate::{
     pb::{QueryRequest, QueryRequestBuilder, TimeQuery, User},
@@ -27,6 +28,7 @@ impl From<UserRow> for User {
 }
 
 impl UserStatsService {
+    #[instrument(name = "query", skip_all)]
     pub async fn query(
         &self,
         request: QueryRequest,
@@ -34,7 +36,10 @@ impl UserStatsService {
         let mut cursor = request
             .to_query(&self.client)
             .fetch::<UserRow>()
-            .map_err(|e| Status::new(Code::Unknown, e.to_string()))?;
+            .inspect_err(|e| {
+                error!("query error: {}", e);
+            })
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(stream! {
             while let Some(row) = cursor.next().await.map_err(|e| Status::internal(e.to_string()))? {
@@ -43,6 +48,7 @@ impl UserStatsService {
         }))
     }
 
+    #[instrument(name = "raw-query", skip(self))]
     pub async fn raw_query(
         &self,
         _query: String,
@@ -84,6 +90,7 @@ impl QueryRequest {
             .expect("Failed to build query request")
     }
 
+    #[instrument(name = "to-query", skip_all)]
     pub fn to_query(&self, client: &Client) -> Query {
         let mut sql = String::from("SELECT ?fields FROM ?");
 
@@ -132,19 +139,17 @@ impl QueryRequest {
 
         sql.push_str(" ORDER BY (email, created_at)");
 
-        println!("{}", sql);
+        debug!("query: {}", sql);
 
         let mut query = client.query(&sql).bind(Identifier("user_stat"));
 
-        query = time_bind.into_iter().fold(query, |query, bind| {
-            println!("bind: {}", bind);
-            query.bind(bind)
-        });
+        query = time_bind
+            .into_iter()
+            .fold(query, |query, bind| query.bind(bind));
 
-        query = id_bind.into_iter().fold(query, |query, bind| {
-            println!("bind: {}", bind);
-            query.bind(bind)
-        });
+        query = id_bind
+            .into_iter()
+            .fold(query, |query, bind| query.bind(bind));
 
         query
     }

@@ -14,6 +14,7 @@ path = "src/client.rs"
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+crm-core = { workspace = true }
 crm-metadata = { workspace = true }
 crm-notification = { workspace = true }
 derive_builder = { workspace = true }

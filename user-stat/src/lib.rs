@@ -14,6 +14,7 @@ use pb::{
     User,
 };
 use tonic::{async_trait, Response, Status};
+use tracing::instrument;
 
 type ServiceResult<T> = Result<Response<T>, Status>;
 
@@ -35,6 +36,7 @@ impl UserStats for UserStatsService {
     type QueryStream = impl Stream<Item = Result<User, Status>> + Send + 'static;
     type RawQueryStream = impl Stream<Item = Result<User, Status>> + Send + 'static;
 
+    #[instrument(name = "query-handler", skip_all)]
     async fn query(
         &self,
         request: tonic::Request<pb::QueryRequest>,

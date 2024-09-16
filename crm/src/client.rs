@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     let req = WelcomeRequestBuilder::default()
         .id(Uuid::new_v4().to_string())
         .interval(90u32)
-        .content_ids([1, 2, 3])
+        .content_ids(vec![1, 2, 3])
         .build()?;
 
     let response = client.welcome(Request::new(req)).await?.into_inner();

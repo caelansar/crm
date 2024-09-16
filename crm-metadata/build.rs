@@ -1,5 +1,4 @@
 use anyhow::Result;
-use proto_builder_trait::tonic::BuilderAttributes;
 use std::fs;
 
 fn main() -> Result<()> {
@@ -7,7 +6,7 @@ fn main() -> Result<()> {
     let builder = tonic_build::configure();
     builder
         .out_dir("src/pb")
-        .with_type_attributes(&["MaterializeRequest"], &[r#"#[derive(Eq, Hash)]"#])
+        .type_attribute("metadata.MaterializeRequest", r#"#[derive(Eq, Hash)]"#)
         .compile(
             &[
                 "../protos/metadata/message.proto",

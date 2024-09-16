@@ -1,17 +1,20 @@
-use std::mem;
+use std::{mem, panic};
 
 use anyhow::Result;
-use crm::{AppConfig, ConfigExt, CrmService};
+use crm::{AppConfig, CrmService};
+use crm_core::{log_error, telemetry, ConfigExt};
 use tonic::transport::{Identity, Server, ServerTlsConfig};
-use tracing::{info, level_filters::LevelFilter};
-use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let layer = Layer::new().with_filter(LevelFilter::INFO);
-    tracing_subscriber::registry().with(layer).init();
-
     let mut config = AppConfig::load().expect("Failed to load config");
+
+    // Initialize tracing & logging.
+    telemetry::init(config.telemetry.clone()).inspect_err(log_error)?;
+
+    // Replace the default panic hook with one that uses structured logging at ERROR level.
+    panic::set_hook(Box::new(|panic| error!(%panic, "process panicked")));
 
     let tls = mem::take(&mut config.server.tls);
 

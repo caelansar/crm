@@ -4,6 +4,7 @@ use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Result;
 use chrono::Utc;
+use crm_core::ConfigExt;
 use futures::StreamExt;
 use prost_types::Timestamp;
 use tokio::time::sleep;
