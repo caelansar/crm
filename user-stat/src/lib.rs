@@ -4,9 +4,10 @@ mod abi;
 mod config;
 pub mod pb;
 
-use std::{ops::Deref, sync::Arc};
+use std::{mem, ops::Deref, sync::Arc};
 
-use clickhouse::Client;
+use abi::UserRow;
+use clickhouse::{test, Client};
 pub use config::AppConfig;
 use futures::Stream;
 use pb::{
@@ -57,6 +58,34 @@ impl UserStatsService {
         let client = Client::default()
             .with_url(&config.server.db_url)
             .with_database(&config.server.db_name);
+        let inner = UserStatsServiceInner { client, config };
+        Self {
+            inner: Arc::new(inner),
+        }
+    }
+
+    #[cfg(feature = "test-util")]
+    pub async fn new_for_test(config: AppConfig) -> Self {
+        let mock = test::Mock::new();
+
+        let client = Client::default().with_url(mock.url());
+
+        let list = vec![
+            UserRow {
+                name: "test1".to_string(),
+                email: "test1@example.com".to_string(),
+            },
+            UserRow {
+                name: "test2".to_string(),
+                email: "test2@example.com".to_string(),
+            },
+        ];
+
+        mock.add(test::handlers::provide(list));
+
+        // Forget the mock instance to avoid it being dropped
+        mem::forget(mock);
+
         let inner = UserStatsServiceInner { client, config };
         Self {
             inner: Arc::new(inner),

@@ -1,5 +1,3 @@
-#![cfg(target_os = "macos")]
-
 use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Result;
@@ -10,7 +8,7 @@ use prost_types::Timestamp;
 use tokio::time::sleep;
 use tonic::transport::Server;
 use user_stat::{
-    pb::{user_stats_client::UserStatsClient, IdQuery, QueryRequestBuilder, TimeQuery},
+    pb::{user_stats_client::UserStatsClient, IdQuery, QueryRequestBuilder, TimeQuery, User},
     AppConfig, UserStatsService,
 };
 
@@ -27,11 +25,15 @@ async fn query_should_work() -> Result<()> {
         .build()
         .unwrap();
 
-    let mut stream = client.query(query).await?.into_inner();
+    let stream = client.query(query).await?.into_inner();
 
-    while let Some(user) = stream.next().await {
-        println!("{:?}", user?);
-    }
+    let users: Vec<User> = stream.filter_map(|r| async { r.ok() }).collect().await;
+
+    assert_eq!(users.len(), 2);
+    assert_eq!(users[0].name, "test1");
+    assert_eq!(users[0].email, "test1@example.com");
+    assert_eq!(users[1].name, "test2");
+    assert_eq!(users[1].email, "test2@example.com");
 
     Ok(())
 }
@@ -39,7 +41,7 @@ async fn query_should_work() -> Result<()> {
 async fn start_server(port: u32) -> Result<SocketAddr> {
     let addr = format!("127.0.0.1:{}", port).parse()?;
 
-    let svc = UserStatsService::new(AppConfig::load()?).await;
+    let svc = UserStatsService::new_for_test(AppConfig::load()?).await;
 
     tokio::spawn(async move {
         Server::builder()

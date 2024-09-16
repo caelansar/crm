@@ -3,7 +3,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use clickhouse::{query::Query, sql::Identifier, Client, Row};
 use futures::Stream;
 use prost_types::Timestamp;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tonic::{Code, Response, Status};
 use tracing::{debug, error, instrument};
 
@@ -12,7 +12,7 @@ use crate::{
     ServiceResult, UserStatsService,
 };
 
-#[derive(Row, Deserialize)]
+#[derive(Row, Serialize, Deserialize)]
 pub struct UserRow {
     pub name: String,
     pub email: String,
