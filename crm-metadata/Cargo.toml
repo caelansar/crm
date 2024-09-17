@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+crm-core = { workspace = true }
 derive_builder = { workspace = true }
 fake = { workspace = true }
 futures = { workspace = true }

@@ -508,6 +508,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "crm-core",
  "derive_builder",
  "fake",
  "futures",
@@ -531,6 +532,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "crm-core",
  "crm-notification",
  "fake",
  "futures",

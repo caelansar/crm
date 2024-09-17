@@ -1,4 +1,5 @@
 use anyhow::Result;
+use crm_core::ConfigExt;
 use crm_metadata::{AppConfig, MetadataService};
 use tonic::transport::Server;
 use tracing::{info, level_filters::LevelFilter};

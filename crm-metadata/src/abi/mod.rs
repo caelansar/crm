@@ -95,6 +95,7 @@ mod tests {
     use super::*;
     use crate::AppConfig;
     use anyhow::Result;
+    use crm_core::ConfigExt;
 
     #[tokio::test]
     async fn materialize_should_work() -> Result<()> {

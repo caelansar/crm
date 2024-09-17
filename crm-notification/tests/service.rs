@@ -1,6 +1,7 @@
 use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Result;
+use crm_core::ConfigExt;
 use crm_notification::{
     pb::{
         notification_client::NotificationClient, EmailMessage, InAppMessage, SendRequest,

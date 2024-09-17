@@ -10,6 +10,7 @@ test_utils = ["fake", "nanoid", "uuid"]
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
+crm-core = { workspace = true }
 fake = { workspace = true, optional = true }
 futures = { workspace = true }
 nanoid = { version = "0.4.0", optional = true }
