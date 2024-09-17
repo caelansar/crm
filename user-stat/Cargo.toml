@@ -24,7 +24,7 @@ tokio = { workspace = true, features = ["signal"] }
 tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-clickhouse = { version = "0.12.2", features = ["test-util"] }
+clickhouse = { version = "0.12.2" }
 async-stream = "0.3.5"
 
 [build-dependencies]
@@ -35,4 +35,5 @@ tonic-build = { workspace = true }
 [dev-dependencies]
 fake = { version = "2.9.2", features = ["derive", "chrono"] }
 user-stat = { path = "../user-stat", features = ["test-util"] }
+clickhouse = { version = "0.12.2", features = ["test-util"] }
 nanoid = "0.4.0"

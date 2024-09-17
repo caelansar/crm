@@ -4,10 +4,9 @@ mod abi;
 mod config;
 pub mod pb;
 
-use std::{mem, ops::Deref, sync::Arc};
+use std::{ops::Deref, sync::Arc};
 
-use abi::UserRow;
-use clickhouse::{test, Client};
+use clickhouse::Client;
 pub use config::AppConfig;
 use futures::Stream;
 use pb::{
@@ -64,36 +63,48 @@ impl UserStatsService {
         }
     }
 
-    #[cfg(feature = "test-util")]
-    pub async fn new_for_test(config: AppConfig) -> Self {
-        let mock = test::Mock::new();
-
-        let client = Client::default().with_url(mock.url());
-
-        let list = vec![
-            UserRow {
-                name: "test1".to_string(),
-                email: "test1@example.com".to_string(),
-            },
-            UserRow {
-                name: "test2".to_string(),
-                email: "test2@example.com".to_string(),
-            },
-        ];
-
-        mock.add(test::handlers::provide(list));
-
-        // Forget the mock instance to avoid it being dropped
-        mem::forget(mock);
-
-        let inner = UserStatsServiceInner { client, config };
-        Self {
-            inner: Arc::new(inner),
-        }
-    }
-
     pub fn into_server(self) -> UserStatsServer<Self> {
         UserStatsServer::new(self)
+    }
+}
+
+#[cfg(feature = "test-util")]
+pub mod tests {
+    use super::*;
+    use crate::UserStatsService;
+
+    impl UserStatsService {
+        pub async fn new_for_test(config: AppConfig) -> Self {
+            use std::mem;
+
+            use abi::UserRow;
+            use clickhouse::test;
+
+            let mock = test::Mock::new();
+
+            let client = Client::default().with_url(mock.url());
+
+            let list = vec![
+                UserRow {
+                    name: "test1".to_string(),
+                    email: "test1@example.com".to_string(),
+                },
+                UserRow {
+                    name: "test2".to_string(),
+                    email: "test2@example.com".to_string(),
+                },
+            ];
+
+            mock.add(test::handlers::provide(list));
+
+            // Forget the mock instance to avoid it being dropped
+            mem::forget(mock);
+
+            let inner = UserStatsServiceInner { client, config };
+            Self {
+                inner: Arc::new(inner),
+            }
+        }
     }
 }
 
