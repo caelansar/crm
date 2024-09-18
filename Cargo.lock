@@ -334,6 +334,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
@@ -399,11 +400,13 @@ dependencies = [
  "hyper 1.4.1",
  "hyper-util",
  "lz4_flex",
+ "quanta",
  "replace_with",
  "sealed",
  "serde",
  "static_assertions",
  "thiserror",
+ "time",
  "tokio",
  "url",
 ]
@@ -760,6 +763,7 @@ dependencies = [
  "deunicode",
  "dummy",
  "rand",
+ "time",
 ]
 
 [[package]]
@@ -2174,6 +2178,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
 
 [[package]]
+name = "quanta"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e5167a477619228a0b284fac2674e3c388cba90631d7b7de620e6f1fcd08da5"
+dependencies = [
+ "crossbeam-utils",
+ "libc",
+ "once_cell",
+ "raw-cpuid",
+ "wasi",
+ "web-sys",
+ "winapi",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2210,6 +2229,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
+]
+
+[[package]]
+name = "raw-cpuid"
+version = "11.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb9ee317cfe3fbd54b36a511efc1edd42e216903c9cd575e686dd68a2ba90d8d"
+dependencies = [
+ "bitflags 2.6.0",
 ]
 
 [[package]]
@@ -2654,6 +2682,17 @@ dependencies = [
  "memchr",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_repr"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c64451ba24fc7a6a2d60fc75dd9c83c90903b19028d4eff35e88fc1e86564e9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -3405,8 +3444,11 @@ dependencies = [
  "prost 0.13.2",
  "prost-types 0.13.2",
  "proto-builder-trait",
+ "rand",
  "serde",
+ "serde_repr",
  "serde_yaml 0.9.34+deprecated",
+ "time",
  "tokio",
  "tokio-stream",
  "tonic",
