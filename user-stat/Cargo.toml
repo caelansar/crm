@@ -29,6 +29,7 @@ clickhouse = { version = "0.12.2", features = ["inserter", "time"] }
 async-stream = "0.3.5"
 serde_repr = "0.1.19"
 time = "0.3.36"
+sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "postgres", "chrono"] }
 
 [build-dependencies]
 anyhow = { workspace = true }

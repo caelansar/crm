@@ -4,9 +4,10 @@ mod abi;
 mod config;
 pub mod pb;
 
+use std::pin::Pin;
 use std::{ops::Deref, sync::Arc};
 
-use clickhouse::Client;
+pub use abi::{ClickHouseRepo, Repo, UserRow};
 pub use config::AppConfig;
 use futures::Stream;
 use pb::{
@@ -19,45 +20,58 @@ use tracing::instrument;
 type ServiceResult<T> = Result<Response<T>, Status>;
 
 #[derive(Clone)]
-pub struct UserStatsService {
-    inner: Arc<UserStatsServiceInner>,
+pub struct UserStatsService<R> {
+    inner: Arc<UserStatsServiceInner<R>>,
 }
 
 #[allow(unused)]
-pub struct UserStatsServiceInner {
-    /// Clickhouse client
-    client: Client,
+pub struct UserStatsServiceInner<R> {
+    repo: R,
     /// App base config
     config: AppConfig,
 }
 
 #[async_trait]
-impl UserStats for UserStatsService {
-    type QueryStream = impl Stream<Item = Result<User, Status>> + Send + 'static;
-    type RawQueryStream = impl Stream<Item = Result<User, Status>> + Send + 'static;
+impl<R: Repo> UserStats for UserStatsService<R> {
+    type QueryStream = Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>;
+    type RawQueryStream = Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>;
 
     #[instrument(name = "query-handler", skip_all)]
     async fn query(
         &self,
         request: tonic::Request<pb::QueryRequest>,
     ) -> ServiceResult<Self::QueryStream> {
-        self.query(request.into_inner()).await
+        let stream = self
+            .repo
+            .query(request.into_inner())
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(Box::pin(stream)))
     }
 
+    #[instrument(name = "raw-query-handler", skip_all)]
     async fn raw_query(
         &self,
         request: tonic::Request<pb::RawQueryRequest>,
     ) -> ServiceResult<Self::RawQueryStream> {
-        self.raw_query(request.into_inner().query.clone()).await
+        let stream = self
+            .repo
+            .raw_query(request.into_inner().query.clone())
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(Box::pin(stream)))
     }
 }
 
-impl UserStatsService {
-    pub async fn new(config: AppConfig) -> Self {
-        let client = Client::default()
-            .with_url(&config.server.db_url)
-            .with_database(&config.server.db_name);
-        let inner = UserStatsServiceInner { client, config };
+impl<R> UserStatsService<R> {
+    pub async fn new(repo: R, config: AppConfig) -> Self {
+        // let client = Client::default()
+        //     .with_url(&config.server.db_url)
+        //     .with_database(&config.server.db_name);
+
+        let inner = UserStatsServiceInner { repo, config };
         Self {
             inner: Arc::new(inner),
         }
@@ -73,34 +87,9 @@ pub mod tests {
     use super::*;
     use crate::UserStatsService;
 
-    impl UserStatsService {
-        pub async fn new_for_test(config: AppConfig) -> Self {
-            use std::mem;
-
-            use abi::UserRow;
-            use clickhouse::test;
-
-            let mock = test::Mock::new();
-
-            let client = Client::default().with_url(mock.url());
-
-            let list = vec![
-                UserRow {
-                    name: "test1".to_string(),
-                    email: "test1@example.com".to_string(),
-                },
-                UserRow {
-                    name: "test2".to_string(),
-                    email: "test2@example.com".to_string(),
-                },
-            ];
-
-            mock.add(test::handlers::provide(list));
-
-            // Forget the mock instance to avoid it being dropped
-            mem::forget(mock);
-
-            let inner = UserStatsServiceInner { client, config };
+    impl<R> UserStatsService<R> {
+        pub async fn new_for_test(repo: R, config: AppConfig) -> Self {
+            let inner = UserStatsServiceInner { repo, config };
             Self {
                 inner: Arc::new(inner),
             }
@@ -108,8 +97,8 @@ pub mod tests {
     }
 }
 
-impl Deref for UserStatsService {
-    type Target = UserStatsServiceInner;
+impl<R> Deref for UserStatsService<R> {
+    type Target = UserStatsServiceInner<R>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner

@@ -1,7 +1,8 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{mem, net::SocketAddr, time::Duration};
 
 use anyhow::Result;
 use chrono::Utc;
+use clickhouse::{test, Client};
 use crm_core::ConfigExt;
 use futures::StreamExt;
 use prost_types::Timestamp;
@@ -9,7 +10,7 @@ use tokio::time::sleep;
 use tonic::transport::Server;
 use user_stat::{
     pb::{user_stats_client::UserStatsClient, IdQuery, QueryRequestBuilder, TimeQuery, User},
-    AppConfig, UserStatsService,
+    AppConfig, ClickHouseRepo, UserRow, UserStatsService,
 };
 
 const PORT_BASE: u32 = 6000;
@@ -41,7 +42,29 @@ async fn query_should_work() -> Result<()> {
 async fn start_server(port: u32) -> Result<SocketAddr> {
     let addr = format!("127.0.0.1:{}", port).parse()?;
 
-    let svc = UserStatsService::new_for_test(AppConfig::load()?).await;
+    let mock = test::Mock::new();
+
+    let client = Client::default().with_url(mock.url());
+
+    let repo = ClickHouseRepo::new(client);
+
+    let list = vec![
+        UserRow {
+            name: "test1".to_string(),
+            email: "test1@example.com".to_string(),
+        },
+        UserRow {
+            name: "test2".to_string(),
+            email: "test2@example.com".to_string(),
+        },
+    ];
+
+    mock.add(test::handlers::provide(list));
+
+    // Forget the mock instance to avoid it being dropped
+    mem::forget(mock);
+
+    let svc = UserStatsService::new_for_test(repo, AppConfig::load()?).await;
 
     tokio::spawn(async move {
         Server::builder()
