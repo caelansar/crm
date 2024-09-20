@@ -1,0 +1,7 @@
+INSERT INTO user_stats (email, name, gender, created_at, last_visited_at, last_watched_at, recent_watched, viewed_but_not_started, started_but_not_finished, finished, last_email_notification, last_in_app_notification, last_sms_notification)
+VALUES
+    ('john.doe@example.com', 'John Doe', 'male', '2023-01-01 10:00:00', '2023-06-15 14:30:00', '2023-06-14 20:15:00', ARRAY[101, 102, 103], ARRAY[201, 202], ARRAY[301, 302], ARRAY[401, 402, 403, 404], '2023-06-10 09:00:00', '2023-06-13 16:45:00', '2023-06-11 12:30:00'),
+    ('jane.smith@example.com', 'Jane Smith', 'female', '2023-02-15 09:30:00', '2023-06-14 11:45:00', '2023-06-13 19:20:00', ARRAY[104, 105], ARRAY[203, 204, 205], ARRAY[303], ARRAY[404], '2023-06-12 10:15:00', '2023-06-14 13:30:00', NULL),
+    ('alex.johnson@example.com', 'Alex Johnson', 'unknown', '2023-03-10 14:15:00', '2023-06-13 16:00:00', '2023-06-12 21:30:00', ARRAY[106, 107, 108, 109], ARRAY[206], ARRAY[304, 305, 306], ARRAY[405, 406], '2023-06-11 11:00:00', '2023-06-13 09:45:00', '2023-06-10 17:30:00'),
+    ('emma.wilson@example.com', 'Emma Wilson', 'female', '2023-04-05 11:45:00', '2023-06-15 10:30:00', '2023-06-14 22:00:00', ARRAY[110], ARRAY[207, 208, 209], ARRAY[307], ARRAY[407, 408, 409], '2023-06-13 14:30:00', '2023-06-15 08:15:00', '2023-06-12 19:00:00'),
+    ('michael.brown@example.com', 'Michael Brown', 'male', '2023-05-20 16:30:00', '2023-06-14 09:15:00', '2023-06-13 18:45:00', ARRAY[111, 112], ARRAY[210], ARRAY[308, 309], ARRAY[410], '2023-06-12 16:00:00', '2023-06-14 11:30:00', NULL);

@@ -12,7 +12,7 @@ use tonic::Status;
 use crate::pb::{QueryRequest, QueryRequestBuilder, TimeQuery, User};
 
 pub use clickhouse_repo::ClickHouseRepo;
-
+pub use postgres_repo::PostgresRepo;
 #[derive(sqlx::FromRow, Row, Serialize, Deserialize)]
 pub struct UserRow {
     pub name: String,

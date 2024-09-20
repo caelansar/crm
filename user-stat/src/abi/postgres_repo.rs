@@ -7,15 +7,14 @@ use tonic::Status;
 
 use super::{QueryRequest, Repo, User, UserRow};
 
-#[allow(unused)]
 pub struct PostgresRepo {
     pool: PgPool,
 }
 
-#[allow(unused)]
 impl PostgresRepo {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+    pub async fn new(url: &str) -> Result<Self> {
+        let pool = PgPool::connect(url).await?;
+        Ok(Self { pool })
     }
 
     fn to_query(request: &QueryRequest) -> QueryBuilder<'_, Postgres> {

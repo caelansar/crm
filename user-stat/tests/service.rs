@@ -1,4 +1,8 @@
-use std::{mem, net::SocketAddr, time::Duration};
+use std::{
+    mem,
+    net::SocketAddr,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 use chrono::Utc;
@@ -10,7 +14,7 @@ use tokio::time::sleep;
 use tonic::transport::Server;
 use user_stat::{
     pb::{user_stats_client::UserStatsClient, IdQuery, QueryRequestBuilder, TimeQuery, User},
-    AppConfig, ClickHouseRepo, UserRow, UserStatsService,
+    AppConfig, ClickHouseRepo, PostgresRepo, UserRow, UserStatsService,
 };
 
 const PORT_BASE: u32 = 6000;
@@ -26,9 +30,13 @@ async fn query_should_work() -> Result<()> {
         .build()
         .unwrap();
 
+    let start = Instant::now();
+
     let stream = client.query(query).await?.into_inner();
 
     let users: Vec<User> = stream.filter_map(|r| async { r.ok() }).collect().await;
+
+    println!("time elapsed: {:?}", start.elapsed());
 
     assert_eq!(users.len(), 2);
     assert_eq!(users[0].name, "test1");
@@ -37,6 +45,63 @@ async fn query_should_work() -> Result<()> {
     assert_eq!(users[1].email, "test2@example.com");
 
     Ok(())
+}
+
+#[cfg(feature = "test-util")]
+mod postgres_test {
+    use super::*;
+
+    #[tokio::test]
+    async fn query_should_work_postgres() -> Result<()> {
+        let addr = start_server_postgres(PORT_BASE + 2).await?;
+
+        let mut client = UserStatsClient::connect(format!("http://{addr}")).await?;
+        let query = QueryRequestBuilder::default()
+            .timestamp(("created_at".to_string(), tq(Some(700), None)))
+            .timestamp(("last_visited_at".to_string(), tq(Some(700), Some(0))))
+            .id(("finished".to_string(), id(&[404])))
+            .build()
+            .unwrap();
+
+        let start = Instant::now();
+
+        let stream = client.query(query).await?.into_inner();
+
+        let users: Vec<User> = stream.filter_map(|r| async { r.ok() }).collect().await;
+
+        println!("time elapsed: {:?}", start.elapsed());
+
+        assert_eq!(users.len(), 2);
+        assert_eq!(users[0].name, "Jane Smith");
+        assert_eq!(users[0].email, "jane.smith@example.com");
+        assert_eq!(users[1].name, "John Doe");
+        assert_eq!(users[1].email, "john.doe@example.com");
+
+        Ok(())
+    }
+
+    async fn start_server_postgres(port: u32) -> Result<SocketAddr> {
+        use user_stat::tests::get_test_pool;
+
+        let addr = format!("127.0.0.1:{}", port).parse()?;
+        let (tdb, _pool) = get_test_pool(None).await;
+        let repo = PostgresRepo::new(&tdb.url()).await?;
+
+        mem::forget(tdb);
+
+        let svc = UserStatsService::new_for_test(repo, AppConfig::load()?);
+
+        tokio::spawn(async move {
+            Server::builder()
+                .add_service(svc.into_server())
+                .serve(addr)
+                .await
+                .unwrap();
+        });
+        sleep(Duration::from_micros(1)).await;
+
+        Ok(addr)
+    }
 }
 
 async fn start_server(port: u32) -> Result<SocketAddr> {
@@ -64,7 +129,7 @@ async fn start_server(port: u32) -> Result<SocketAddr> {
     // Forget the mock instance to avoid it being dropped
     mem::forget(mock);
 
-    let svc = UserStatsService::new_for_test(repo, AppConfig::load()?).await;
+    let svc = UserStatsService::new_for_test(repo, AppConfig::load()?);
 
     tokio::spawn(async move {
         Server::builder()

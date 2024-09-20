@@ -7,7 +7,7 @@ pub mod pb;
 use std::pin::Pin;
 use std::{ops::Deref, sync::Arc};
 
-pub use abi::{ClickHouseRepo, Repo, UserRow};
+pub use abi::{ClickHouseRepo, PostgresRepo, Repo, UserRow};
 pub use config::AppConfig;
 use futures::Stream;
 use pb::{
@@ -106,13 +106,42 @@ pub mod tests {
     use super::*;
     use crate::UserStatsService;
 
+    use std::{env, path::Path, sync::Arc};
+
+    use sqlx::{Executor, PgPool};
+    use sqlx_db_tester::TestPg;
+
     impl<R> UserStatsService<R> {
-        pub async fn new_for_test(repo: R, config: AppConfig) -> Self {
+        pub fn new_for_test(repo: R, config: AppConfig) -> Self {
             let inner = UserStatsServiceInner { repo, config };
             Self {
                 inner: Arc::new(inner),
             }
         }
+    }
+
+    /// Get a test postgres pool
+    pub async fn get_test_pool(url: Option<&str>) -> (TestPg, PgPool) {
+        let url = match url {
+            Some(url) => url.to_string(),
+            None => "postgres://postgres:postgres@localhost:5432".to_string(),
+        };
+        let p = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("migrations");
+        let tdb = TestPg::new(url, p);
+        let pool = tdb.get_pool().await;
+
+        // run prepared sql to insert test dat
+        let sql = include_str!("../assets/postgres.sql").split(';');
+        let mut ts = pool.begin().await.expect("begin transaction failed");
+        for s in sql {
+            if s.trim().is_empty() {
+                continue;
+            }
+            ts.execute(s).await.expect("execute sql failed");
+        }
+        ts.commit().await.expect("commit transaction failed");
+
+        (tdb, pool)
     }
 }
 
