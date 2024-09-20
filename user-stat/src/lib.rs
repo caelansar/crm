@@ -31,6 +31,25 @@ pub struct UserStatsServiceInner<R> {
     config: AppConfig,
 }
 
+impl<R: Repo> UserStatsService<R> {
+    pub fn query(
+        &self,
+        request: tonic::Request<pb::QueryRequest>,
+    ) -> impl std::future::Future<
+        Output = ServiceResult<
+            impl Stream<Item = Result<User, Status>> + Send + 'static + use<'_, R>, // https://blog.rust-lang.org/2024/09/05/impl-trait-capture-rules.html
+        >,
+    > {
+        let stream = self.repo.query(request.into_inner());
+
+        async move {
+            Ok(Response::new(
+                stream.await.map_err(|e| Status::internal(e.to_string()))?,
+            ))
+        }
+    }
+}
+
 #[async_trait]
 impl<R: Repo> UserStats for UserStatsService<R> {
     type QueryStream = Pin<Box<dyn Stream<Item = Result<User, Status>> + Send>>;
