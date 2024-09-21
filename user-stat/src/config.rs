@@ -18,4 +18,12 @@ pub struct ServerConfig {
     pub port: u16,
     pub db_url: String,
     pub db_name: String,
+    pub db_type: DBType,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DBType {
+    Clickhouse,
+    Postgres,
 }

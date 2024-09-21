@@ -8,7 +8,7 @@ use std::pin::Pin;
 use std::{ops::Deref, sync::Arc};
 
 pub use abi::{ClickHouseRepo, PostgresRepo, Repo, UserRow};
-pub use config::AppConfig;
+pub use config::{AppConfig, DBType};
 use futures::Stream;
 use pb::{
     user_stats_server::{UserStats, UserStatsServer},
