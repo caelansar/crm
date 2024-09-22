@@ -12,6 +12,7 @@ use pb::{
     Content, MaterializeRequest,
 };
 use tonic::{async_trait, Request, Response, Status, Streaming};
+use tracing::instrument;
 
 #[allow(unused)]
 pub struct MetadataService {
@@ -24,6 +25,7 @@ type ServiceResult<T> = Result<Response<T>, Status>;
 impl Metadata for MetadataService {
     type MaterializeStream = impl Stream<Item = Result<Content, Status>> + Send;
 
+    #[instrument(name = "materialize-handler", skip_all)]
     async fn materialize(
         &self,
         request: Request<Streaming<MaterializeRequest>>,

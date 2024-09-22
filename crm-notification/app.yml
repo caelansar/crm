@@ -1,5 +1,11 @@
 server:
   port: 50003
+
+telemetry:
+  tracing:
+    enabled: true
+    service_name: crm-notification
+
 auth:
   pk: |
     -----BEGIN PUBLIC KEY-----

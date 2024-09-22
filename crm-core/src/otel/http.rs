@@ -1,7 +1,13 @@
 use http::{HeaderMap, Request};
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
-use tracing::{warn, Span};
+use tracing::{field, info_span, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+
+/// Create a span for the incoming request
+pub fn make_span<B>(request: &http::Request<B>) -> Span {
+    let headers = request.headers();
+    info_span!("incoming request", ?headers, trace_id = field::Empty)
+}
 
 /// Trace context propagation: associate the current span with the OTel trace of the given request
 pub fn accept_trace<B>(request: &Request<B>, span: &Span) {

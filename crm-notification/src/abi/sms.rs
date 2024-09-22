@@ -4,9 +4,10 @@ use crate::{
     NotificationService,
 };
 use tonic::Status;
-use tracing::{debug, warn};
+use tracing::{debug, instrument, warn};
 
 impl Sender for SmsMessage {
+    #[instrument(name = "send-sms", skip_all)]
     async fn send(self, svc: NotificationService) -> Result<SendResponse, Status> {
         let message_id = self.message_id.clone();
         svc.sender.send(Msg::Sms(self)).await.map_err(|e| {

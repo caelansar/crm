@@ -37,6 +37,7 @@ impl CrmService {
             let sender: String = sender.clone();
             async move {
                 let v = v.ok()?;
+                debug!("sending email to {}", v.email);
                 Some(SendRequest::new_email(
                     "Welcome".to_string(),
                     sender,

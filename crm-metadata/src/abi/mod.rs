@@ -15,10 +15,12 @@ use rand::Rng;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Response, Status};
+use tracing::instrument;
 
 const CHANNEL_SIZE: usize = 1024;
 
 impl MetadataService {
+    #[instrument(name = "materialize", skip_all)]
     pub async fn materialize(
         &self,
         mut stream: impl Stream<Item = Result<MaterializeRequest, Status>> + Send + 'static + Unpin,
@@ -37,6 +39,7 @@ impl MetadataService {
 }
 
 impl Content {
+    #[instrument(name = "content-materialize", skip_all)]
     pub fn materialize(id: u32) -> Self {
         let mut rng = rand::thread_rng();
         Content {

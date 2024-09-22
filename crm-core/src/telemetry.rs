@@ -7,14 +7,14 @@ use tracing::{debug, error};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 /// Telemetry (logging, tracing, metrics) configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(rename = "tracing")]
     pub tracing_config: TracingConfig,
 }
 
 /// Tracing (as opposed to logging or metrics) configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TracingConfig {
     pub enabled: bool,
     pub service_name: String,

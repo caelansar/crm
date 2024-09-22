@@ -1,5 +1,11 @@
 server:
   port: 50002
+
+telemetry:
+  tracing:
+    enabled: true
+    service_name: crm-metadata
+
 auth:
   pk: |
     -----BEGIN PUBLIC KEY-----

@@ -1,10 +1,10 @@
 use anyhow::Result;
 use clickhouse::Client;
-use crm_core::{accept_trace, log_error, telemetry, ConfigExt};
+use crm_core::{accept_trace, log_error, make_span, telemetry, ConfigExt};
 use tonic::transport::Server;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
-use tracing::{field, info, info_span, Span};
+use tracing::info;
 use user_stat::{AppConfig, ClickHouseRepo, DBType, PostgresRepo, UserStatsService};
 
 #[tokio::main]
@@ -53,9 +53,4 @@ async fn main() -> Result<()> {
     router.serve(addr).await?;
 
     Ok(())
-}
-
-fn make_span<B>(request: &http::Request<B>) -> Span {
-    let headers = request.headers();
-    info_span!("incoming request", ?headers, trace_id = field::Empty)
 }

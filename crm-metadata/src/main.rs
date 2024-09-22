@@ -1,20 +1,42 @@
+use std::mem;
+
 use anyhow::Result;
-use crm_core::ConfigExt;
+use crm_core::{accept_trace, log_error, make_span, telemetry, ConfigExt};
 use crm_metadata::{AppConfig, MetadataService};
 use tonic::transport::Server;
-use tracing::{info, level_filters::LevelFilter};
-use tracing_subscriber::{fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt, Layer as _};
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+use tracing::{info, instrument};
 
 #[tokio::main]
+#[instrument]
 async fn main() -> Result<()> {
-    let layer = Layer::new().with_filter(LevelFilter::INFO);
-    tracing_subscriber::registry().with(layer).init();
+    let mut config = AppConfig::load().expect("Failed to load config");
 
-    let config = AppConfig::load().expect("Failed to load config");
+    let telemetry_config = mem::take(&mut config.telemetry);
+
+    telemetry::init(telemetry_config).inspect_err(log_error)?;
+
     let addr = config.server.port;
     let addr = format!("127.0.0.1:{}", addr).parse().unwrap();
     info!("Metadata service listening on {}", addr);
     let svc = MetadataService::new(config).into_server();
-    Server::builder().add_service(svc).serve(addr).await?;
+
+    Server::builder()
+        .layer(
+            ServiceBuilder::new()
+                .layer(tower::timeout::TimeoutLayer::new(
+                    std::time::Duration::from_secs(30),
+                ))
+                .layer(
+                    TraceLayer::new_for_grpc()
+                        .make_span_with(make_span)
+                        .on_request(accept_trace),
+                ),
+        )
+        .add_service(svc)
+        .serve(addr)
+        .await?;
+
     Ok(())
 }

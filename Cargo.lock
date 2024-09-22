@@ -573,6 +573,8 @@ dependencies = [
  "tokio-stream",
  "tonic",
  "tonic-build 0.12.2",
+ "tower 0.5.1",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
 ]
@@ -596,6 +598,8 @@ dependencies = [
  "tokio-stream",
  "tonic",
  "tonic-build 0.12.2",
+ "tower 0.5.1",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
  "uuid",

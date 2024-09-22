@@ -5,7 +5,7 @@ pub mod telemetry;
 
 pub use config::ConfigExt;
 pub use error::log_error;
-pub use otel::{accept_trace, SendTrace};
+pub use otel::{accept_trace, make_span, SendTrace};
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

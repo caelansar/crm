@@ -12,6 +12,7 @@ use futures::Stream;
 use pb::{notification_server::Notification, send_request::Msg, SendRequest, SendResponse};
 use tokio::sync::mpsc;
 use tonic::{async_trait, Request, Response, Status, Streaming};
+use tracing::instrument;
 
 #[derive(Clone)]
 pub struct NotificationService {
@@ -30,6 +31,7 @@ type ServiceResult<T> = Result<Response<T>, Status>;
 impl Notification for NotificationService {
     type SendStream = impl Stream<Item = Result<SendResponse, Status>> + Send + 'static;
 
+    #[instrument(name = "send-handler", skip(self, request))]
     async fn send(
         &self,
         request: Request<Streaming<SendRequest>>,

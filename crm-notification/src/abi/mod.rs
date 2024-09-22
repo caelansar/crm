@@ -9,7 +9,7 @@ use std::{sync::Arc, time::Duration};
 use tokio::{sync::mpsc, time::sleep};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Response, Status};
-use tracing::{info, warn};
+use tracing::{info, instrument, warn};
 use uuid::Uuid;
 
 use crate::{
@@ -48,6 +48,7 @@ impl NotificationService {
     /// - EmailMessage
     /// - SmsMessage
     /// - InAppMessage
+    #[instrument(name = "send", skip_all)]
     pub async fn send(
         &self,
         mut stream: impl Stream<Item = Result<SendRequest, Status>> + Send + 'static + Unpin,
