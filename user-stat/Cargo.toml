@@ -41,7 +41,7 @@ proto-builder-trait = { workspace = true }
 tonic-build = { workspace = true }
 
 [dev-dependencies]
-fake = { version = "2.9.2", features = ["derive", "time"] }
+fake = { version = "2.9.2", features = ["derive", "time", "chrono"] }
 user-stat = { path = "../user-stat", features = ["test-util"] }
 clickhouse = { version = "0.12.2", features = ["test-util"] }
 nanoid = "0.4.0"

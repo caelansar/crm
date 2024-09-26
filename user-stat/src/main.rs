@@ -44,7 +44,11 @@ async fn main() -> Result<()> {
         }
         DBType::Postgres => {
             info!("Using Postgres as database");
-            let repo = PostgresRepo::new(&config.server.db_url).await?;
+            let repo = PostgresRepo::new(&format!(
+                "{}/{}",
+                config.server.db_url, config.server.db_name
+            ))
+            .await?;
             let svc = UserStatsService::new(repo, config).await.into_server();
             server.add_service(svc)
         }

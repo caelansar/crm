@@ -93,7 +93,7 @@ impl ClickHouseRepo {
 }
 
 impl Repo for ClickHouseRepo {
-    #[instrument(name = "query", skip_all)]
+    #[instrument(name = "query-clickhouse", skip_all)]
     async fn query(
         &self,
         request: QueryRequest,
@@ -113,7 +113,7 @@ impl Repo for ClickHouseRepo {
         })
     }
 
-    #[instrument(name = "raw-query", skip(self))]
+    #[instrument(name = "raw-query-clickhouse", skip(self))]
     async fn raw_query(
         &self,
         query: String,

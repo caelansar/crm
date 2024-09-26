@@ -3,6 +3,9 @@ server:
   db_url: http://localhost:18123
   db_name: crm
   db_type: clickhouse
+  # db_url: postgres://postgres:postgres@localhost:5432
+  # db_name: stats
+  # db_type: postgres
 
 telemetry:
   tracing:

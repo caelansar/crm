@@ -4,6 +4,7 @@ use futures::Stream;
 use prost_types::Timestamp;
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use tonic::Status;
+use tracing::instrument;
 
 use super::{QueryRequest, Repo, User, UserRow};
 
@@ -64,6 +65,7 @@ impl PostgresRepo {
 }
 
 impl Repo for PostgresRepo {
+    #[instrument(name = "query-postgres", skip_all)]
     async fn query(
         &self,
         request: QueryRequest,
@@ -80,6 +82,7 @@ impl Repo for PostgresRepo {
         ))
     }
 
+    #[instrument(name = "raw-query-postgres", skip_all)]
     async fn raw_query(
         &self,
         query: String,
