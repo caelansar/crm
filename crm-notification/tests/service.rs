@@ -14,11 +14,13 @@ use tokio::time::sleep;
 use tonic::{transport::Server, Request};
 
 #[tokio::test]
-async fn send_notification_should_work() -> Result<()> {
+async fn send_notification_should_work() {
     tracing_subscriber::fmt::init();
 
-    let addr = start_server().await?;
-    let mut client = NotificationClient::connect(format!("http://{}", addr)).await?;
+    let addr = start_server().await.unwrap();
+    let mut client = NotificationClient::connect(format!("http://{}", addr))
+        .await
+        .unwrap();
     let stream = tokio_stream::iter(vec![
         SendRequest {
             msg: Some(EmailMessage::fake().into()),
@@ -31,15 +33,13 @@ async fn send_notification_should_work() -> Result<()> {
         },
     ]);
     let request = Request::new(stream);
-    let response = client.send(request).await?.into_inner();
+    let response = client.send(request).await.unwrap().into_inner();
     let ret: Vec<_> = response
         .filter_map(|res| async { res.ok() })
         .collect()
         .await;
 
     assert_eq!(ret.len(), 3);
-
-    Ok(())
 }
 
 async fn start_server() -> Result<SocketAddr> {

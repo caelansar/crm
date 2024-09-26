@@ -97,12 +97,11 @@ fn created_at() -> Option<Timestamp> {
 mod tests {
     use super::*;
     use crate::AppConfig;
-    use anyhow::Result;
     use crm_core::ConfigExt;
 
     #[tokio::test]
-    async fn materialize_should_work() -> Result<()> {
-        let config = AppConfig::load()?;
+    async fn materialize_should_work() {
+        let config = AppConfig::load().unwrap();
         let service = MetadataService::new(config);
         let stream = tokio_stream::iter(vec![
             Ok(MaterializeRequest { id: 1 }),
@@ -110,10 +109,8 @@ mod tests {
             Ok(MaterializeRequest { id: 3 }),
         ]);
 
-        let response = service.materialize(stream).await?;
+        let response = service.materialize(stream).await.unwrap();
         let ret = response.into_inner().collect::<Vec<_>>().await;
         assert_eq!(ret.len(), 3);
-
-        Ok(())
     }
 }

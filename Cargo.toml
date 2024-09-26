@@ -2,6 +2,8 @@
 members = ["crm", "crm-core", "crm-metadata", "crm-notification", "load-balancer", "user-stat"]
 resolver = "2"
 
+[workspace.lints.clippy]
+needless_return = "allow"
 
 [workspace.dependencies]
 anyhow = "1.0.82"

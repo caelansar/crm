@@ -83,8 +83,8 @@ pub struct SendResponse {
 /// Generated client implementations.
 pub mod notification_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     /// The Notification service provides a way to send notifications to users.
     #[derive(Debug, Clone)]
     pub struct NotificationClient<T> {
@@ -129,8 +129,9 @@ pub mod notification_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + std::marker::Send + std::marker::Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             NotificationClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -173,14 +174,19 @@ pub mod notification_client {
             tonic::Response<tonic::codec::Streaming<super::SendResponse>>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/notification.Notification/Send");
+            let path = http::uri::PathAndQuery::from_static(
+                "/notification.Notification/Send",
+            );
             let mut req = request.into_streaming_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("notification.Notification", "Send"));
@@ -198,7 +204,8 @@ pub mod notification_server {
         /// Server streaming response type for the Send method.
         type SendStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::SendResponse, tonic::Status>,
-            > + std::marker::Send
+            >
+            + std::marker::Send
             + 'static;
         /// Send a notification to a user.
         async fn send(
@@ -228,7 +235,10 @@ pub mod notification_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -283,18 +293,24 @@ pub mod notification_server {
                 "/notification.Notification/Send" => {
                     #[allow(non_camel_case_types)]
                     struct SendSvc<T: Notification>(pub Arc<T>);
-                    impl<T: Notification> tonic::server::StreamingService<super::SendRequest> for SendSvc<T> {
+                    impl<
+                        T: Notification,
+                    > tonic::server::StreamingService<super::SendRequest>
+                    for SendSvc<T> {
                         type Response = super::SendResponse;
                         type ResponseStream = T::SendStream;
-                        type Future =
-                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<tonic::Streaming<super::SendRequest>>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut =
-                                async move { <T as Notification>::send(&inner, request).await };
+                            let fut = async move {
+                                <T as Notification>::send(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -320,17 +336,21 @@ pub mod notification_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    Ok(http::Response::builder()
-                        .status(200)
-                        .header("grpc-status", tonic::Code::Unimplemented as i32)
-                        .header(
-                            http::header::CONTENT_TYPE,
-                            tonic::metadata::GRPC_CONTENT_TYPE,
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", tonic::Code::Unimplemented as i32)
+                                .header(
+                                    http::header::CONTENT_TYPE,
+                                    tonic::metadata::GRPC_CONTENT_TYPE,
+                                )
+                                .body(empty_body())
+                                .unwrap(),
                         )
-                        .body(empty_body())
-                        .unwrap())
-                }),
+                    })
+                }
             }
         }
     }
