@@ -12,9 +12,11 @@ crm-notification = { workspace = true }
 dotenv = "0.15.0"
 futures = { workspace = true }
 pingora = { version = "0.3.0", features = ["proxy"] }
+serde = { workspace = true }
 tonic = { workspace = true }
 tokio = { workspace = true }
 tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 pingora-load-balancing = "0.3.0"
+jwt-simple = "0.12.10"

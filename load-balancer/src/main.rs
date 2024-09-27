@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use dotenv::dotenv;
+use load_balancer::{DecodingKey, PK};
 use pingora::protocols::ALPN;
 use pingora::server::{configuration::Opt, Server};
 use pingora::tls::x509::X509;
@@ -14,7 +15,12 @@ use pingora_load_balancing::LoadBalancer;
 use tonic::async_trait;
 use tracing::{info, Level};
 
-pub struct GrpcProxy(Arc<LoadBalancer<RoundRobin>>);
+pub struct GrpcProxy(Arc<GrpcProxyInner>);
+
+pub struct GrpcProxyInner {
+    lb: LoadBalancer<RoundRobin>,
+    dk: DecodingKey,
+}
 
 fn main() {
     dotenv().ok();
@@ -25,11 +31,15 @@ fn main() {
     let mut server = Server::new(Some(opt)).unwrap();
     server.bootstrap();
 
+    let dk = DecodingKey::load(PK).unwrap();
+
     let upstreams: LoadBalancer<RoundRobin> =
         LoadBalancer::try_from_iter(["127.0.0.1:50002", "127.0.0.1:50003"]).unwrap();
 
-    let mut grpc_proxy =
-        pingora::proxy::http_proxy_service(&server.configuration, GrpcProxy(Arc::new(upstreams)));
+    let mut grpc_proxy = pingora::proxy::http_proxy_service(
+        &server.configuration,
+        GrpcProxy(Arc::new(GrpcProxyInner { lb: upstreams, dk })),
+    );
 
     let mut tls_settings = pingora::listeners::TlsSettings::intermediate(
         "assets/cert/server.crt",
@@ -52,6 +62,30 @@ impl ProxyHttp for GrpcProxy {
     type CTX = ();
     fn new_ctx(&self) -> Self::CTX {}
 
+    async fn request_filter(&self, session: &mut Session, _ctx: &mut Self::CTX) -> Result<bool> {
+        info!("request_filter");
+
+        let token = session.req_header().headers.get("authorization");
+
+        if let Some(token) = token {
+            match self.0.dk.verify(token.to_str().unwrap()) {
+                Ok(user) => {
+                    info!("Authenticated user: {:?}", user);
+                    Ok(false) // Continue processing the request
+                }
+                Err(e) => {
+                    info!("Authentication error: {:?}", e);
+                    let _ = session.respond_error(401).await;
+                    Ok(true) // Stop processing the request
+                }
+            }
+        } else {
+            info!("Missing authorization token");
+            let _ = session.respond_error(401).await;
+            Ok(true) // Stop processing the request
+        }
+    }
+
     async fn upstream_peer(
         &self,
         _session: &mut Session,
@@ -60,6 +94,7 @@ impl ProxyHttp for GrpcProxy {
         // get the upstream peer using round robin
         let upstream = self
             .0
+            .lb
             .select(b"", 256) // key is ignored if the selection is random or round robin.
             .unwrap();
 
