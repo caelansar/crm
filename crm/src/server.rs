@@ -2,7 +2,7 @@ use std::{mem, panic};
 
 use anyhow::Result;
 use crm::{AppConfig, CrmService};
-use crm_core::{log_error, telemetry, ConfigExt};
+use crm_core::{log_error, shutdown_signal, telemetry, ConfigExt};
 use tonic::transport::{Identity, Server, ServerTlsConfig};
 use tracing::{error, info};
 
@@ -33,7 +33,10 @@ async fn main() -> Result<()> {
             .await?;
     } else {
         info!("TLS is not enabled");
-        Server::builder().add_service(svc).serve(addr).await?;
+        Server::builder()
+            .add_service(svc)
+            .serve_with_shutdown(addr, shutdown_signal())
+            .await?;
     }
     Ok(())
 }

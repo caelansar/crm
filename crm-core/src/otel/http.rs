@@ -22,7 +22,7 @@ pub fn accept_trace<B>(request: &Request<B>, span: &Span) {
 
 struct HeaderExtractor<'a>(&'a HeaderMap);
 
-impl<'a> Extractor for HeaderExtractor<'a> {
+impl Extractor for HeaderExtractor<'_> {
     fn get(&self, key: &str) -> Option<&str> {
         self.0.get(key).and_then(|v| {
             let s = v.to_str();
