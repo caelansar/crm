@@ -33,6 +33,7 @@ tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 uuid = { version = "1.8.0", features = ["v4"] }
+mobc = "0.8.4"
 
 [build-dependencies]
 anyhow = { workspace = true }

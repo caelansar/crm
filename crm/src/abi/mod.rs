@@ -16,11 +16,20 @@ impl CrmService {
         let d1 = Utc::now() - Duration::days(req.interval as _);
         let d2 = d1 + Duration::days(1);
         let query = QueryRequest::new_with_dt("created_at", d1, d2);
-        let res_user_stats = self.user_stats.clone().query(query).await?.into_inner();
+        let res_user_stats = self
+            .user_stats_pool
+            .get()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .query(query)
+            .await?
+            .into_inner();
 
         let contents = self
-            .metadata
-            .clone()
+            .metadata_pool
+            .get()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
             .materialize(MaterializeRequest::new_with_ids(&req.content_ids))
             .await?
             .into_inner();
@@ -46,7 +55,12 @@ impl CrmService {
             }
         });
 
-        self.notification.clone().send(reqs).await?;
+        self.notification_pool
+            .get()
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .send(reqs)
+            .await?;
 
         Ok(Response::new(WelcomeResponse { id: request_id }))
     }
